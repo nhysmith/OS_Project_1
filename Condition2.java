@@ -20,6 +20,10 @@ public class Condition2 {
      *				lock whenever it uses <tt>sleep()</tt>,
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
+	
+	private Lock conditionLock;
+    
+    private ThreadQueue waitQ = ThreadedKernel.scheduler.newThreadQueue(true);
     public Condition2(Lock conditionLock) {
 	this.conditionLock = conditionLock;
     }
@@ -30,12 +34,11 @@ public class Condition2 {
      * current thread must hold the associated lock. The thread will
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
-    
-    //wait()
     @SuppressWarnings("static-access")
 	public void sleep() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 	
+	Machine.interrupt().disable();
 	//Enqueue thread to waitQ
 	waitQ.waitForAccess(KThread.currentThread());
 	
@@ -45,54 +48,48 @@ public class Condition2 {
 	//Suspend the thread
 	KThread.currentThread().sleep();
 	
+	Machine.interrupt().enabled();
+	 //TODO where to enable the interrupts
+		
 	//Acquire the lock
 	conditionLock.acquire();
+	 
     }
 
     /**
      * Wake up at most one thread sleeping on this condition variable. The
      * current thread must hold the associated lock.
      */
-    
-    //signal()
     public void wake() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 	
-	//If waitQ is not empty
-	if(waitQ.nextThread() != null)
-	{
-		//Dequeue the next process from waitQ
-		KThread temp = waitQ.nextThread();
-		
-		//Place next process in the scheduler's ready queue
-		temp.ready();
-		
-	}
-	
-	
+	Machine.interrupt().disable();
+    KThread temp = waitQ.nextThread();
+    if(temp != null)
+    {
+        //Place next process in the scheduler's ready queue
+        temp.ready();
+    }
+    Machine.interrupt().enabled();
     }
 
     /**
      * Wake up all threads sleeping on this condition variable. The current
      * thread must hold the associated lock.
      */
-    
-    //signalAll()
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-	
-	while(waitQ.nextThread() != null)
-	{
-		//Dequeue the next process from waitQ
-		KThread temp = waitQ.nextThread();
-		
-		//Place next process in the scheduler's ready queue
-		temp.ready();
-	}
-	
+
+	Machine.interrupt().disable();
+    KThread temp = waitQ.nextThread();
+    while(temp != null)
+    {
+        //Place next process in the scheduler's ready queue
+        temp.ready();
+        temp = waitQ.nextThread();
+    }
+    Machine.interrupt().enabled();
     }
 
-    private Lock conditionLock;
-    
-    private ThreadQueue waitQ = ThreadedKernel.scheduler.newThreadQueue(true);
+    //private Lock conditionLock;
 }
