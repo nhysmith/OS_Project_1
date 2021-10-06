@@ -193,6 +193,9 @@ public class KThread {
 
 
 	currentThread.status = statusFinished;
+	currentThread.l.acquire();
+	currentThread.cv.wakeAll();
+	currentThread.l.release();
 	
 	sleep();
     }
@@ -276,6 +279,25 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 	Lib.assertTrue(this != currentThread);
+	
+	//If the status is finished return
+	if(this.status == statusFinished)
+	{
+		return;
+	}
+	
+	//Disable interrupts to run atomically
+	Machine.interrupt().disable();
+	
+	//Acquire the lock
+	this.l.acquire(); //Do I ever need to release this lock? 
+	
+	//Sleep until process is finished
+	this.cv.sleep();
+	
+	//Enable interrupts
+	Machine.interrupt().enable();
+	
 
     }
 
@@ -444,4 +466,7 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    
+    private Lock l = new Lock();
+    private Condition2 cv = new Condition2(l);
 }
