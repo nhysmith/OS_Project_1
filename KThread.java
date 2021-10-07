@@ -286,19 +286,12 @@ public class KThread {
 		return;
 	}
 	
-	//Disable interrupts to run atomically
-	Machine.interrupt().disable();
-	
 	//Acquire the lock
 	this.l.acquire(); //Do I ever need to release this lock? 
 	
 	//Sleep until process is finished
 	this.cv.sleep();
 	
-	//Enable interrupts
-	Machine.interrupt().enable();
-	
-
     }
 
     /**
