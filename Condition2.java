@@ -38,18 +38,19 @@ public class Condition2 {
 	public void sleep() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 	
-	Machine.interrupt().disable();
+	boolean intStatus = Machine.interrupt().disable();
 	//Enqueue thread to waitQ
 	waitQ.waitForAccess(KThread.currentThread());
+	Machine.interrupt().restore(intStatus);
 	
 	//Release the lock
 	conditionLock.release();
 	
+	intStatus = Machine.interrupt().disable();
 	//Suspend the thread
 	KThread.currentThread().sleep();
-	
-	Machine.interrupt().enabled();
-	 //TODO where to enable the interrupts
+	//KThread.sleep();?
+	Machine.interrupt().restore(intStatus);
 		
 	//Acquire the lock
 	conditionLock.acquire();
@@ -78,17 +79,21 @@ public class Condition2 {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	Machine.interrupt().disable();
-    KThread temp = waitQ.nextThread();
-    while(temp != null)
-    {
-        //Place next process in the scheduler's ready queue
-        temp.ready();
-        temp = waitQ.nextThread();
-    }
-    Machine.interrupt().enabled();
+    	
+		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	
+		Machine.interrupt().disable();
+	    KThread temp = waitQ.nextThread();
+	    while(temp != null)
+	    {
+	        //Place next process in the scheduler's ready queue
+	    	//System.out.println(temp.toString());
+	        temp.ready();
+	        temp = waitQ.nextThread();
+	        /*if(temp != null)
+	        	System.out.println(temp.toString());*/
+	    }
+	    Machine.interrupt().enabled();
     }
 
     //private Lock conditionLock;
