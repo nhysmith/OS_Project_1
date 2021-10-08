@@ -191,8 +191,9 @@ public class KThread {
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
-
+	
 	currentThread.status = statusFinished;
+	//Current thread acquires its own lock to wakeAll()
 	currentThread.l.acquire();
 	currentThread.cv.wakeAll();
 	currentThread.l.release();
@@ -286,11 +287,15 @@ public class KThread {
 		return;
 	}
 	
-	//Acquire the lock
-	this.l.acquire(); //Do I ever need to release this lock? 
+	//Current thread(caller) Acquires this thread's lock
+	this.l.acquire(); 
 	
-	//Sleep until process is finished
+	//Current thread sleeps until process is finished
 	this.cv.sleep();
+	
+	//Do I ever need to release this lock? 
+	//Current thread releases this processes lock
+	this.l.release();
 	
     }
 
