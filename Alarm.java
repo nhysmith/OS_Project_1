@@ -27,7 +27,18 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+	//KThread.currentThread().yield();
+    //System.out.println("In timer interrupt method");
+	if(Machine.timer().getTime() > wakeTime)
+	{
+		l.acquire();
+		cv.wake();
+		l.release();
+	}
+	else
+	{
+		//System.out.println(Machine.timer().getTime());
+	}
     }
 
     /**
@@ -46,8 +57,17 @@ public class Alarm {
      */
     public void waitUntil(long x) {
 	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+	wakeTime = Machine.timer().getTime() + x;
+	l.acquire();
+	//System.out.println("Current thread has the lock");
+	cv.sleep();
+	//System.out.println("Current thread was put to sleep");
+	l.release();
+	//System.out.println("Lock was released");
+	
     }
+    
+    Lock l = new Lock();
+    Condition2 cv = new Condition2(l);
+    long wakeTime;
 }
