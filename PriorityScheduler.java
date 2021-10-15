@@ -5,6 +5,7 @@ import nachos.machine.*;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -130,20 +131,29 @@ public class PriorityScheduler extends Scheduler {
 	    this.transferPriority = transferPriority;
 	}
 
+	//In round robin, the thread is added to the end of FIFO Queue
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);
 	}
 
+	//
 	public void acquire(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).acquire(this);
 	}
-
+	
+	//returns the next waiting thread with the highest priority
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me
-	    return null;
+	    if(pQ.isEmpty())
+	    	return null;
+	    else
+	    {
+		    return pQ.remove();
+	    }
+	    //return null;
 	}
 
 	/**
@@ -153,9 +163,17 @@ public class PriorityScheduler extends Scheduler {
 	 * @return	the next thread that <tt>nextThread()</tt> would
 	 *		return.
 	 */
+	//Like peek()?
 	protected ThreadState pickNextThread() {
 	    // implement me
-	    return null;
+		if(pQ.isEmpty())
+	    	return null;
+	    else
+	    {
+	    	ThreadState ts = new ThreadState(pQ.peek());
+		    return ts;
+	    }
+	    //return null;
 	}
 	
 	public void print() {
@@ -168,6 +186,9 @@ public class PriorityScheduler extends Scheduler {
 	 * threads to the owning thread.
 	 */
 	public boolean transferPriority;
+	//private java.util.PriorityQueue<KThread> pQ = new java.util.PriorityQueue<KThread>();
+	private LinkedList<KThread> pQ = new LinkedList<KThread>();
+
     }
 
     /**
@@ -206,7 +227,12 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	public int getEffectivePriority() {
 	    // implement me
-	    return priority;
+		//If a thread with a higher priority is waiting on this one, increase its priority
+		//Does this get called when restoring the priority?
+		int effectivePriority = priority;
+		
+		
+	    return effectivePriority;
 	}
 
 	/**
@@ -219,6 +245,7 @@ public class PriorityScheduler extends Scheduler {
 		return;
 	    
 	    this.priority = priority;
+	   //getEffectivePriority();
 	    
 	    // implement me
 	}
@@ -237,6 +264,11 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	public void waitForAccess(PriorityQueue waitQueue) {
 	    // implement me
+		//The Queue I'm waiting for
+	    //Lib.assertTrue(waitQueue.pQ.isEmpty());
+		waitQueue.pQ.add(thread);
+
+
 	}
 
 	/**
@@ -251,6 +283,9 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	public void acquire(PriorityQueue waitQueue) {
 	    // implement me
+		//The Queue I have
+	    Lib.assertTrue(waitQueue.pQ.isEmpty());
+
 	}	
 
 	/** The thread with which this object is associated. */	   
