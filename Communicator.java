@@ -83,21 +83,7 @@ public class Communicator {
     	l.release();
 	return Message.getMessage();
     }
-    
-    boolean hasSpeaker()
-    {
-    	if(numSpeakers == 0)
-    		return false;
-    	return true;
-    }
-    
-    boolean hasListener()
-    {
-    	if(numListeners == 0)
-    		return false;
-    	return true;
-    }
-    
+        
     private static class Message
     {
     	static int _message;
@@ -120,9 +106,6 @@ public class Communicator {
     	}
     }
     
-    private int numSpeakers = 0;
-    private int numListeners = 0;
-    
     private Lock l = new Lock();
     private Condition2 sCV = new Condition2(l);
     private Condition2 lCV = new Condition2(l);
@@ -132,6 +115,4 @@ public class Communicator {
     private boolean hasSpeaker = false;
     private boolean hasListener = false;
     private boolean hasGotMsg = false;
-    
-
 }
