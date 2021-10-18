@@ -14,6 +14,7 @@ public class Communicator {
      * Allocate a new communicator.
      */
     public Communicator() {
+    	
     }
 
     /**
@@ -27,6 +28,31 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	l.acquire();
+    	
+    	while(hasSpeaker)
+    	{
+    		speakerWaitQueue.sleep();
+    	}
+    	
+    	hasSpeaker = true;
+    	
+    	Message.setMessage(word);
+    	
+    	while(!hasListener || !hasGotMsg)
+    	{
+    		lCV.wake();
+    		sCV.sleep();
+    	}
+    	
+    	hasListener = false;
+    	hasSpeaker = false;
+    	hasGotMsg = false;
+    	
+    	speakerWaitQueue.wake();
+    	listenerWaitQueue.wake();
+
+    	l.release();    	
     }
 
     /**
@@ -36,6 +62,76 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	return 0;
+    	l.acquire();
+
+    	while(hasListener)
+    	{
+    		listenerWaitQueue.sleep();
+    	}
+    	
+    	hasListener = true;
+    	
+    	while(!hasSpeaker)
+    	{
+    		lCV.sleep();
+    	}
+    	
+    	sCV.wake();
+    	Lib.assertTrue(Message.HasMessage());
+    	hasGotMsg = true;
+    	
+    	l.release();
+	return Message.getMessage();
     }
+    
+    boolean hasSpeaker()
+    {
+    	if(numSpeakers == 0)
+    		return false;
+    	return true;
+    }
+    
+    boolean hasListener()
+    {
+    	if(numListeners == 0)
+    		return false;
+    	return true;
+    }
+    
+    private static class Message
+    {
+    	static int _message;
+    	static boolean _hasMessage = false;
+    	public static void setMessage(int message)
+    	{
+    		_message = message;
+    		_hasMessage = true;
+    	}
+    	
+    	public static int getMessage()
+    	{
+    		_hasMessage = false;
+    		return _message;
+    	}
+    	
+    	public static boolean HasMessage()
+    	{
+    		return _hasMessage;
+    	}
+    }
+    
+    private int numSpeakers = 0;
+    private int numListeners = 0;
+    
+    private Lock l = new Lock();
+    private Condition2 sCV = new Condition2(l);
+    private Condition2 lCV = new Condition2(l);
+    private Condition2 speakerWaitQueue = new Condition2(l);
+    private Condition2 listenerWaitQueue = new Condition2(l);
+    
+    private boolean hasSpeaker = false;
+    private boolean hasListener = false;
+    private boolean hasGotMsg = false;
+    
+
 }
